@@ -30,7 +30,10 @@ yarn
 yarn dev
 ```
 
-![Screenshot_20231025_070806](https://github.com/Asam237/top-committers-scraping/assets/34966088/9b9142da-16ff-4a80-95da-cf03f48fb312)
+
+https://github.com/Asam237/untalent-scraping/assets/34966088/b970c82e-1885-4600-97e4-8743982af592
+
+
 
 ## Authors
 
