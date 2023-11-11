@@ -19,7 +19,7 @@ interface IJob {
 
 const fetchJob = (url: any) => {
   const cvWriter = createObjectCsvWriter({
-    path: "./users.csv",
+    path: "./jobs.csv",
     header: [
       { id: "index", title: "Index" },
       { id: "titles", title: "Title" },
@@ -53,7 +53,7 @@ const fetchJob = (url: any) => {
       );
       const jsonContent = JSON.stringify(jobs);
       cvWriter.writeRecords(jobs);
-      fs.writeFile("./users.json", jsonContent, "utf8", (error) => {
+      fs.writeFile("./jobs.json", jsonContent, "utf8", (error) => {
         if (error) console.log(error);
       });
     })
