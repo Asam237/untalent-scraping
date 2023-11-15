@@ -8,17 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -32,25 +21,26 @@ const inquirer = readline_1.default.createInterface({
     input: process.stdin,
     output: process.stdout,
 });
-const array = [
-    { myId: 1, Country: "cameroon" },
-    { myId: 2, Country: "algeria" },
-    { myId: 3, Country: "angola" },
-];
-const transformed = array.reduce((acc, _a) => {
-    var { myId } = _a, x = __rest(_a, ["myId"]);
-    acc[myId] = x;
-    return acc;
-}, {});
-console.table(transformed);
-inquirer.question("\n\nEnter the country: ", (country) => __awaiter(void 0, void 0, void 0, function* () {
-    const url = "https://committers.top/" + country;
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const transporter = nodemailer_1.default.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: "abbasaliaboubakar@gmail.com",
+        pass: "welfexgsiyhlqwqi",
+    },
+});
+const fetchJob = (url) => {
     const cvWriter = (0, csv_writer_1.createObjectCsvWriter)({
-        path: "./users.csv",
+        path: "./jobs.csv",
         header: [
-            { id: "index", title: "Rank" },
-            { id: "user", title: "User" },
-            { id: "contribs", title: "Contribs" },
+            { id: "index", title: "Index" },
+            { id: "titles", title: "Title" },
+            { id: "companies", title: "Company" },
+            { id: "deadline", title: "Deadline" },
+            { id: "apply", title: "Apply" },
         ],
     });
     const AxiosInstance = axios_1.default.create();
@@ -58,20 +48,50 @@ inquirer.question("\n\nEnter the country: ", (country) => __awaiter(void 0, void
         .then((response) => {
         const html = response.data;
         const $ = cheerio_1.default.load(html);
-        const usersRow = $(".users-list > tbody > tr");
-        const users = [];
-        usersRow.each((i, elem) => {
-            const contribs = $(elem).find("td:nth-child(3)").text();
-            const user = $(elem).find("td:nth-child(2)").children().text();
-            users.push({ rank: i + 1, user, contribs });
+        const jobsRow = $("main > div");
+        const jobs = [];
+        jobsRow.each((i, elem) => {
+            const title = $(elem).find(".job > .content > h4").text();
+            const company = $(elem)
+                .find(".card > .content > .company > a")
+                .text();
+            const deadline = $(elem)
+                .find(".card > .actions > .deadline > .expiration")
+                .text();
+            const apply = $(elem)
+                .find(".card > .actions > div > a:last")
+                .attr("href");
+            jobs.push({ rank: i + 1, title, company, deadline, apply });
         });
         console.log("\nThe list has been successfully registered. Please consult your JSON and CSV files. Thank you !\n");
-        const jsonContent = JSON.stringify(users);
-        cvWriter.writeRecords(users);
-        fs_1.default.writeFile("./users.json", jsonContent, "utf8", (error) => {
+        const jsonContent = JSON.stringify(jobs);
+        cvWriter.writeRecords(jobs);
+        fs_1.default.writeFile("./jobs.json", jsonContent, "utf8", (error) => {
             if (error)
                 console.log(error);
         });
+        inquirer.question("addresse: ", (address) => __awaiter(void 0, void 0, void 0, function* () {
+            transporter.sendMail({
+                from: "abbasaliaboubakar@gmail.com",
+                to: address,
+                subject: "Hello from Nodemailer!",
+                text: "This is a test email sent with Nodemailer using ES6 syntax.",
+            }, (error, info) => {
+                if (error) {
+                    console.error("Error sending email:", error);
+                }
+                else {
+                    console.log("Email sent:", info.response);
+                }
+            });
+        }));
     })
         .catch(console.error);
-}));
+};
+const handleMail = () => {
+    inquirer.question("Please specify your location: (cameroon, chad, france, etc): ", (country) => __awaiter(void 0, void 0, void 0, function* () {
+        fetchJob("https://untalent.org/jobs/in-anything/contract-all/" +
+            country.split(" ").join("-"));
+    }));
+};
+handleMail();

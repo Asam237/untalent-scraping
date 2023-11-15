@@ -17,6 +17,19 @@ interface IJob {
   apply: string;
 }
 
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: "abbasaliaboubakar@gmail.com",
+    pass: "welfexgsiyhlqwqi",
+  },
+});
+
 const fetchJob = (url: any) => {
   const cvWriter = createObjectCsvWriter({
     path: "./jobs.csv",
@@ -49,23 +62,56 @@ const fetchJob = (url: any) => {
         jobs.push({ rank: i + 1, title, company, deadline, apply });
       });
       console.log(
-        "\nThe list has been successfully registered. Please consult your JSON and CSV files. Thank you !\n"
+        "\nThe list has been successfully registered. Please consult your JSON and CSV files.\n"
       );
       const jsonContent = JSON.stringify(jobs);
       cvWriter.writeRecords(jobs);
       fs.writeFile("./jobs.json", jsonContent, "utf8", (error) => {
         if (error) console.log(error);
       });
+      inquirer.question(
+        "Please enter your email address : ",
+        async (address) => {
+          transporter.sendMail(
+            {
+              from: "abbasaliaboubakar@gmail.com",
+              to: address,
+              subject: "Every open position in the UN located",
+              text: "Receive your weekly notification. Feel free to share this email with anyone who might find it interesting.",
+              attachments: [
+                {
+                  filename: "jobs.csv",
+                  path: "jobs.csv",
+                },
+              ],
+            },
+            (error, info) => {
+              if (error) {
+                console.error("Error sending email:", error);
+              } else {
+                console.log(
+                  "You have forwarded the list of email addresses to the provided address.\nEmail sent:",
+                  info.response + "\nThank you!\n"
+                );
+              }
+            }
+          );
+        }
+      );
     })
     .catch(console.error);
 };
 
-inquirer.question(
-  "Please specify your location: (cameroon, chad, france, etc): ",
-  async (country: any) => {
-    fetchJob(
-      "https://untalent.org/jobs/in-anything/contract-all/" +
-        country.split(" ").join("-")
-    );
-  }
-);
+const handleMail = () => {
+  inquirer.question(
+    "Please specify your location: (cameroon, chad, france, etc): ",
+    async (country: any) => {
+      fetchJob(
+        "https://untalent.org/jobs/in-anything/contract-all/" +
+          country.split(" ").join("-")
+      );
+    }
+  );
+};
+
+handleMail();
